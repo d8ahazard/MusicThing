@@ -82,7 +82,7 @@ let defaultSamples = [
     "04_07.mp3",
     "04_08.mp3",
     "04_09.mp3",
-    "metronome.wav"
+    "metronome.mp3"
 ]
 
 function runLoop(){
@@ -355,6 +355,9 @@ function metronome() {
     if (is_metronome) {
         self.classList.remove("active");
         is_metronome = false;
+        if (tickSound) {
+            tickSound.stop();
+        }
     } else {
         self.classList.add("active");
         is_metronome = true;
