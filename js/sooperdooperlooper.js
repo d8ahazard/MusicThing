@@ -11,27 +11,24 @@ let minTempo = 20;
 let maxTempo = 240;
 let currentStep = 0;
 let totalSteps = (60000 / currentTempo / 16) * numMeasures;
-let is_recording = true;
-let held_notes = [];
+
+let is_recording = false;
+let is_metronome = false;
+let is_playing = true;
+
+let samples = {};
 
 let playNotes = {};
-
-let recNotes = {
-}
-
-let samples = {}
-
+let recNotes = {};
+let held_notes = [];
 let activeNotes = [];
-
 // All notes to start will a howl created and put here.
 let startNotes = {};
-
 // Each loop we take everything in startNotes, start it, and move it here.
 let startedNotes = {};
-
 // If a note stop is triggered, we add it to this array, call stop, and then clear stopNotes.
 let stopNotes = {};
-
+let tickSound;
 let lastTimestamp = Date.now();
 
 let defaultSamples = [
@@ -93,7 +90,13 @@ function runLoop(){
     totalSteps = (60000 / currentTempo / 16) * numMeasures;
     let currentTimestamp = Date.now();
     if(currentTimestamp - lastTimestamp > frequency){
-        internalTimer();
+        // Only run the "play things" loop if we're playing.
+        if (is_playing) {
+            if (currentStep % 8 === 0 && is_metronome) {
+                playMetronome();
+            }
+            internalTimer();    
+        }        
         currentStep += 1;
         if (currentStep >= totalSteps) currentStep = 0;
         lastTimestamp = currentTimestamp;
@@ -110,6 +113,9 @@ function loadDefaultSamples() {
             let column = parseInt(parts[1].split(".")[0]);
             console.log("Row: " + row + ", Column: " + column);
             samples[`${row}-${column}`] = full_path;
+        }
+        if (sample_name.indexOf("metronome") !== -1) {
+            samples["metronome"] = full_path;
         }
     });
     console.log("Loaded samples: ", samples);
@@ -287,23 +293,36 @@ function createKeyboardControls() {
 
 // Create UI controls to do the things
 function createControls() {
-    // Create the main div container
-    let controls = document.createElement("div");
-    controls.id = "controls";
 
+    let controls = document.getElementById("controls");
+    let controlsSet = false;
+    if (controls === null || controls === undefined) {
+        controls = document.createElement("div");
+        controls.id = "controls";
+    } else {
+        controlsSet = true;
+    }
     // Check screen orientation and add appropriate class
     if(window.innerHeight > window.innerWidth) {
-        controls.classList.add("topbar");
-    } else {
+        controls.classList.remove("topbar");
         controls.classList.add("sidebar");
+    } else {
+        controls.classList.remove("sidebar");
+        controls.classList.add("topbar");
     }
+    // Create the main div container
+    if (controlsSet) return;
 
     // Create the buttons
-    let buttonNames = ["play", "stop", "back", "forward", "copy", "paste", "clear"];
+    let buttonNames = ["metronome", "play", "back", "forward", "copy", "paste", "clear", "record"];
+    let buttonIcons = ["metronome", "play", "rewind", "fast-forward", "content-copy", "content-paste", "delete", "record"];
     for(let i = 0; i < buttonNames.length; i++) {
         let button = document.createElement("div");
         button.id = buttonNames[i];
-        button.classList.add("ctrlBtn");
+        if (button.id === "play") {
+            button.classList.add("active");
+        }
+        button.classList.add("ctrlBtn", "mdi", "mdi-" + buttonIcons[i]);
         button.addEventListener("click", function() {
             window[this.id]();
         });
@@ -331,13 +350,54 @@ function setInstrumentSwitcher() {
 }
 
 // Create empty functions for each button
-function play() {}
-function stop() {}
+function metronome() {
+    let self = document.getElementById("metronome");
+    if (is_metronome) {
+        self.classList.remove("active");
+        is_metronome = false;
+    } else {
+        self.classList.add("active");
+        is_metronome = true;
+    }
+}
+function play() {
+    let self = document.getElementById("play");
+    if (is_playing) {
+        self.classList.remove("active");
+        is_playing = false;
+    } else {
+        self.classList.add("active");
+        is_playing = true;
+    }
+}
 function back() {}
 function forward() {}
 function copy() {}
 function paste() {}
-function clear() {}
+function clear() {
+    if (confirm("This will reset everything. Continue?")) {
+        playNotes = {};
+        recNotes = {};
+        held_notes = [];
+        activeNotes = [];
+        // All notes to start will a howl created and put here.
+        startNotes = {};
+        // Each loop we take everything in startNotes, start it, and move it here.
+        startedNotes = {};
+        // If a note stop is triggered, we add it to this array, call stop, and then clear stopNotes.
+        stopNotes = {};
+    }
+}
+function record() {
+    let self = document.getElementById("record");
+    if (is_recording) {
+        self.classList.remove("active");
+        is_recording = false;
+    } else {
+        self.classList.add("active");
+        is_recording = true;
+    }
+}
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -351,6 +411,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 window.addEventListener("resize", function () {
     makeGrid();
+    createControls();
+
 });
 
 
@@ -416,6 +478,16 @@ function recordNote(noteIdx) {
     }
 }
 
+function playMetronome() {
+    console.log("Tick");
+    if (tickSound === null || tickSound === undefined) {
+        tickSound  =new Howl({
+            src: [samples["metronome"]]
+        });
+    }
+    tickSound.stop();
+    tickSound.play();
+}
 
 function playNote(clickedElement, is_event=false) {
     // Get the clicked element
