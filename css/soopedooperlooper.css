@@ -1,0 +1,35 @@
+body {
+    overflow: hidden;
+    background: black;
+}
+
+.note-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.noteRow {
+    background: black;
+    flex-wrap: nowrap;
+    display: flex;
+}
+
+.noteCol {
+    border: 1px white solid;
+    background-color: #000000;
+    transition: background-color 0.15s ease-out;
+}
+
+.noteCol.heldNote {
+    border: 1px white solid;
+}
+
+.note_8 {
+    height: calc(100% / 8);
+}
+
+.note_6 {
+    height: calc(100% / 6);
+}
