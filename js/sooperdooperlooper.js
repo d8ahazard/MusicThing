@@ -91,12 +91,10 @@ function runLoop(){
     let currentTimestamp = Date.now();
     if(currentTimestamp - lastTimestamp > frequency){
         // Only run the "play things" loop if we're playing.
-        if (is_playing) {
-            if (currentStep % 8 === 0 && is_metronome) {
+        if (currentStep % 8 === 0 && is_metronome) {
                 playMetronome();
             }
-            internalTimer();    
-        }        
+            internalTimer();
         currentStep += 1;
         if (currentStep >= totalSteps) currentStep = 0;
         lastTimestamp = currentTimestamp;
