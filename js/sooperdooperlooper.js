@@ -111,10 +111,14 @@ function loadDefaultSamples() {
             let row = parseInt(parts[0]);
             let column = parseInt(parts[1].split(".")[0]);
             console.log("Row: " + row + ", Column: " + column);
-            samples[`${row}-${column}`] = full_path;
+            samples[`${row}-${column}`] = new Howl({
+                src: [full_path]
+            });
         }
         if (sample_name.indexOf("metronome") !== -1) {
-            samples["metronome"] = full_path;
+            samples["metronome"] = new Howl({
+                src: [full_path]
+            });
         }
     });
     console.log("Loaded samples: ", samples);
@@ -206,9 +210,7 @@ function recordNote(noteIdx) {
 
 function playMetronome() {
     if (tickSound === null || tickSound === undefined) {
-        tickSound = new Howl({
-            src: [samples["metronome"]]
-        });
+        tickSound = samples["metronome"];
     }
     tickSound.stop();
     tickSound.play();
@@ -235,9 +237,7 @@ function playNote(clickedElement, is_event = false) {
 
     if (note_idx in samples) {
         if (!(note_idx in startNotes) && !(note_idx in startedNotes)) {
-            let sound = new Howl({
-                src: [samples[note_idx]]
-            });
+            let sound = samples[note_idx];
             sound.on('end', function () {
                 console.log('Finished!');
                 endNote(note_idx);
