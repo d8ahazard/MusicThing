@@ -8,12 +8,19 @@ body {
     height: 50px;
     position: fixed;
     display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #controls.sidebar {
     width: 50px;
     height: 100%;
+    left: 0;
     position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
 .ctrlBtn {
@@ -60,8 +67,8 @@ body {
 }
 
 .circle-base {
-    position: fixed;
-    left: 10px;
+    position: absolute;
+    left: 1px;
 }
 
 .circle-fill {

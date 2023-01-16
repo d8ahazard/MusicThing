@@ -94,6 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     requestAnimationFrame(runLoop);
     loadDefaultSamples();
     selectRow();
+    fillCircle(0);
 });
 
 window.addEventListener("resize", function () {
@@ -362,8 +363,8 @@ function createInstrumentControls() {
     num_rows = rows;
     num_cols = columns;
     // Set the size of the rows and columns based on the screen size
-    let vSize = ((screenWidth - 2) / (columns + 2));
-    let hSize = ((screenHeight - 2) / (rows + 2));
+    let vSize = ((screenWidth - 100) / (columns));
+    let hSize = ((screenHeight - 100) / (rows));
     let size = Math.min(vSize, hSize) + "px";
 
 // Create the rows
@@ -641,10 +642,7 @@ function findAdjacentElements(clickedElement, existingElements) {
 }
 
 function selectRow() {
-    document.querySelectorAll('.noteRow.active').forEach(function(element) {
-        element.classList.remove('active');
-    });
-    document.getElementById("row" + currentInstrument).classList.add("active");
+
 }
 
 let noteColors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff"];
