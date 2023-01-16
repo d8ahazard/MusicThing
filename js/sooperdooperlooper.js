@@ -104,7 +104,7 @@ window.addEventListener("resize", function () {
 });
 
 function loadDefaultSamples() {
-    defaultSamples.forEach(function(sample_name){
+    defaultSamples.forEach(function (sample_name) {
         let full_path = `./samples/${sample_name}`;
         if (sample_name.indexOf("_") !== -1) {
             let parts = sample_name.split("_");
@@ -121,17 +121,17 @@ function loadDefaultSamples() {
 }
 
 // Main instrument loop
-function runLoop(){
+function runLoop() {
     let frequency = 60000 / currentTempo / 16;
     totalSteps = (60000 / currentTempo / 16) * numMeasures;
     let currentTimestamp = Date.now();
-    if(currentTimestamp - lastTimestamp > frequency){
+    if (currentTimestamp - lastTimestamp > frequency) {
         // Only run the "play things" loop if we're playing.
         if (currentStep % 8 === 0 && is_metronome) {
-                playMetronome();
-                fillCircle(currentStep / totalSteps);
-            }
-            internalTimer();
+            playMetronome();
+            fillCircle(currentStep / totalSteps);
+        }
+        internalTimer();
         currentStep += 1;
         if (currentStep >= totalSteps) currentStep = 0;
         lastTimestamp = currentTimestamp;
@@ -166,7 +166,9 @@ function internalTimer() {
         to_play.play();
     }
     startedNotes = [startNotes, startedNotes].reduce(function (r, o) {
-        Object.keys(o).forEach(function (k) { r[k] = o[k]; });
+        Object.keys(o).forEach(function (k) {
+            r[k] = o[k];
+        });
         return r;
     }, {});
 
@@ -196,16 +198,15 @@ function recordNote(noteIdx) {
     if (!(currentStep in recNotes)) {
         recNotes[currentStep] = [noteIdx];
     } else {
-        if(!recNotes[currentStep].includes(noteIdx)) {
+        if (!recNotes[currentStep].includes(noteIdx)) {
             recNotes[currentStep].push(noteIdx);
         }
     }
 }
 
 function playMetronome() {
-    console.log("Tick");
     if (tickSound === null || tickSound === undefined) {
-        tickSound  =new Howl({
+        tickSound = new Howl({
             src: [samples["metronome"]]
         });
     }
@@ -213,7 +214,7 @@ function playMetronome() {
     tickSound.play();
 }
 
-function playNote(clickedElement, is_event=false) {
+function playNote(clickedElement, is_event = false) {
     // Get the clicked element
     if (!clickedElement.classList) {
         console.log("NOCLASS", clickedElement);
@@ -237,7 +238,7 @@ function playNote(clickedElement, is_event=false) {
             let sound = new Howl({
                 src: [samples[note_idx]]
             });
-            sound.on('end', function(){
+            sound.on('end', function () {
                 console.log('Finished!');
                 endNote(note_idx);
             });
@@ -257,7 +258,7 @@ function playNote(clickedElement, is_event=false) {
     let existingElements = [clickedElement];
     for (let i = 0; i < 2; i++) {
         let nextElements = [];
-        for(let k = 0; k < existingElements.length; k++) {
+        for (let k = 0; k < existingElements.length; k++) {
             nextElements = nextElements.concat(findAdjacentElements(existingElements[k], existingElements));
         }
         // Set the background color of the adjacent elements
@@ -269,11 +270,12 @@ function playNote(clickedElement, is_event=false) {
             nextElements[j].classList.add("heldNote");
         }
 
-    // Update existing elements to include the newly found elements
-    existingElements = existingElements.concat(nextElements);
+        // Update existing elements to include the newly found elements
+        existingElements = existingElements.concat(nextElements);
         randomColor = darkenColor(randomColor, 0.50);
         // Wait before continuing the loop
-        setTimeout(function() {}, 100);
+        setTimeout(function () {
+        }, 100);
     }
 }
 
@@ -290,7 +292,7 @@ function clearNote(clickedElement, is_event = false) {
     if (is_event === true && is_recording) {
         let index = held_notes.indexOf(note_idx);
         if (index !== -1) {
-          held_notes.splice(index, 1);
+            held_notes.splice(index, 1);
         }
     }
     if (note_idx in samples) {
@@ -313,7 +315,7 @@ function clearNote(clickedElement, is_event = false) {
     let existingElements = [clickedElement];
     for (let i = 0; i < 2; i++) {
         let nextElements = [];
-        for(let k = 0; k < existingElements.length; k++) {
+        for (let k = 0; k < existingElements.length; k++) {
             nextElements = nextElements.concat(findAdjacentElements(existingElements[k], existingElements));
         }
         // Set the background color of the adjacent elements
@@ -379,7 +381,7 @@ function createInstrumentControls() {
             let col = document.createElement("div");
             col.classList.add("noteCol", `note${j}`, `row${i}`);
             if (orientation === "portrait") {
-            col.id = `note${i}-${j}`;
+                col.id = `note${i}-${j}`;
             } else {
                 col.id = `note${j}-${i}`;
             }
@@ -396,10 +398,18 @@ function createInstrumentControls() {
     document.body.prepend(container);
     let noteCols = document.getElementsByClassName("noteCol");
     for (let i = 0; i < noteCols.length; i++) {
-        noteCols[i].addEventListener("mousedown", function(event) { playNote(event.target, true); });
-        noteCols[i].addEventListener("mouseup", function(event) { clearNote(event.target, true); });
-        noteCols[i].addEventListener("touchstart", function(event) { playNote(event.target, true); });
-        noteCols[i].addEventListener("touchend", function(event) { clearNote(event.target, true); });
+        noteCols[i].addEventListener("mousedown", function (event) {
+            playNote(event.target, true);
+        });
+        noteCols[i].addEventListener("mouseup", function (event) {
+            clearNote(event.target, true);
+        });
+        noteCols[i].addEventListener("touchstart", function (event) {
+            playNote(event.target, true);
+        });
+        noteCols[i].addEventListener("touchend", function (event) {
+            clearNote(event.target, true);
+        });
     }
 }
 
@@ -424,20 +434,20 @@ function createKeyboardControls() {
     console.log("Created controls.")
 
     // Add keydown event listener
-    keyDownListener = document.addEventListener("keydown", function(event) {
+    keyDownListener = document.addEventListener("keydown", function (event) {
         let keyCode = event.code;
         if (keyCode in keyCodeIndex) {
             let col = keyCodeIndex[keyCode];
             // Find the corresponding element in the grid using the index
             let element = document.getElementById(`note${currentInstrument}-${col}`);
-            if (element && ! element.classList.contains("heldNote")) {
+            if (element && !element.classList.contains("heldNote")) {
                 playNote(element, true);
             }
             // Add code here to perform actions on the element
         }
     });
 
-    keyUpListener = document.addEventListener("keyup", function(event) {
+    keyUpListener = document.addEventListener("keyup", function (event) {
         let keyCode = event.code;
         if (keyCode in keyCodeIndex) {
             let col = keyCodeIndex[keyCode];
@@ -462,7 +472,7 @@ function createRecordingControls() {
         controlsSet = true;
     }
     // Check screen orientation and add appropriate class
-    if(window.innerHeight > window.innerWidth) {
+    if (window.innerHeight > window.innerWidth) {
         controls.classList.remove("topbar");
         controls.classList.add("sidebar");
     } else {
@@ -475,7 +485,7 @@ function createRecordingControls() {
     // Create the buttons
     let buttonNames = ["metronome", "play", "back", "forward", "copy", "paste", "clear", "undo", "record"];
     let buttonIcons = ["metronome", "play", "rewind", "fast-forward", "content-copy", "content-paste", "delete", "undo", "record"];
-    for(let i = 0; i < buttonNames.length; i++) {
+    for (let i = 0; i < buttonNames.length; i++) {
         let button = document.createElement("div");
         button.id = buttonNames[i];
         if (button.id === "play") {
@@ -499,7 +509,7 @@ function createRecordingControls() {
             button.appendChild(svg);
         }
         button.classList.add("ctrlBtn", "mdi", "mdi-" + buttonIcons[i]);
-        button.addEventListener("click", function() {
+        button.addEventListener("click", function () {
             window[this.id]();
         });
         controls.appendChild(button);
@@ -511,21 +521,22 @@ function createRecordingControls() {
 
 // Set listeners to make up/down keys adjust the selected instrument
 function setKeyListeners() {
-    document.addEventListener("keydown", function(event) {
-  if (event.code === "ArrowUp") {
-    currentInstrument = currentInstrument - 1;
-  } else if (event.code === "ArrowDown") {
-    currentInstrument = currentInstrument + 1;
-  } else if (event.code === "ArrowRight") {
-      currentTempo = Math.min(currentTempo + 1, maxTempo);
-  } else if (event.code === "ArrowLeft") {
-      currentTempo = Math.max(currentTempo - 1, minTempo);
-  }
-  let last_instrument = currentInstrument;
-  currentInstrument = currentInstrument < 0 ? num_inst - 1 : currentInstrument >= num_inst ? 0 : currentInstrument;
-  selectRow();
-});
+    document.addEventListener("keydown", function (event) {
+        if (event.code === "ArrowUp") {
+            currentInstrument = currentInstrument - 1;
+        } else if (event.code === "ArrowDown") {
+            currentInstrument = currentInstrument + 1;
+        } else if (event.code === "ArrowRight") {
+            currentTempo = Math.min(currentTempo + 1, maxTempo);
+        } else if (event.code === "ArrowLeft") {
+            currentTempo = Math.max(currentTempo - 1, minTempo);
+        }
+        let last_instrument = currentInstrument;
+        currentInstrument = currentInstrument < 0 ? num_inst - 1 : currentInstrument >= num_inst ? 0 : currentInstrument;
+        selectRow();
+    });
 }
+
 // endregion UI Setup
 
 
@@ -545,6 +556,7 @@ function metronome() {
         is_metronome = true;
     }
 }
+
 function play() {
     let self = document.getElementById("play");
     if (is_playing) {
@@ -555,15 +567,25 @@ function play() {
         is_playing = true;
     }
 }
-function back() {}
-function forward() {}
-function copy() {}
-function paste() {}
+
+function back() {
+}
+
+function forward() {
+}
+
+function copy() {
+}
+
+function paste() {
+}
+
 function undo() {
     if (confirm("This will undo the current inputs. Continue?")) {
         recNotes = {};
     }
 }
+
 function clear() {
     if (confirm("This will reset everything. Continue?")) {
         playNotes = {};
@@ -575,13 +597,16 @@ function clear() {
         stopNotes = {};
     }
 }
+
 function record() {
     let self = document.getElementById("record");
     if (is_recording) {
         self.classList.remove("active");
         // Merge current rec buffer
         playNotes = [playNotes, recNotes].reduce(function (r, o) {
-            Object.keys(o).forEach(function (k) { r[k] = o[k]; });
+            Object.keys(o).forEach(function (k) {
+                r[k] = o[k];
+            });
             return r;
         }, {});
         is_recording = false;
@@ -636,13 +661,30 @@ function findAdjacentElements(clickedElement, existingElements) {
             }
         }
     }
-    return nextElements.filter(function(element) {
+    return nextElements.filter(function (element) {
         return element !== null && element !== undefined;
     });
 }
 
 function selectRow() {
+    let selectedCols = document.querySelectorAll(".noteCol.selected");
+    for (let i = 0; i < selectedCols.length; i++) {
+        selectedCols[i].classList.remove("selected");
+    }
+    if (window.innerWidth > window.innerHeight) {
 
+        let nextRow = document.getElementById("row" + currentInstrument);
+        if (nextRow) {
+            let cols = nextRow.querySelectorAll(".noteCol");
+            cols.forEach(col => col.classList.add("selected"));
+        }
+    } else {
+
+        let nextCols = document.querySelectorAll(".note" + currentInstrument);
+        for (let i = 0; i < nextCols.length; i++) {
+            nextCols[i].classList.add("selected");
+        }
+    }
 }
 
 let noteColors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff"];
