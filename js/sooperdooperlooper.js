@@ -146,9 +146,10 @@ function runLoop() {
 function internalTimer() {
     let newPlayNotes = playNotes[currentStep] || [];
     let newRecNotes = recNotes[currentStep] || [];
+    if (!is_playing) recNotes = [];
     let newNotes = newPlayNotes.concat(newRecNotes);
     let notesToRemove = activeNotes.filter(note => !newNotes.includes(note));
-    if (is_recording) {
+    if (is_recording && is_playing) {
         held_notes.forEach(noteIndex => recordNote(noteIndex));
     }
     // call function for new notes
