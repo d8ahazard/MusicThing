@@ -85,22 +85,22 @@ let defaultSamples = [
     "metronome.mp3"
 ]
 
-function runLoop(){
-    let frequency = 60000 / currentTempo / 16;
-    totalSteps = (60000 / currentTempo / 16) * numMeasures;
-    let currentTimestamp = Date.now();
-    if(currentTimestamp - lastTimestamp > frequency){
-        // Only run the "play things" loop if we're playing.
-        if (currentStep % 8 === 0 && is_metronome) {
-                playMetronome();
-            }
-            internalTimer();
-        currentStep += 1;
-        if (currentStep >= totalSteps) currentStep = 0;
-        lastTimestamp = currentTimestamp;
-    }
+
+document.addEventListener("DOMContentLoaded", function () {
+    createInstrumentControls();
+    createRecordingControls();
+    createKeyboardControls(0);
+    setKeyListeners();
     requestAnimationFrame(runLoop);
-}
+    loadDefaultSamples();
+    selectRow();
+});
+
+window.addEventListener("resize", function () {
+    createInstrumentControls();
+    createRecordingControls();
+    selectRow();
+});
 
 function loadDefaultSamples() {
     defaultSamples.forEach(function(sample_name){
@@ -117,6 +117,25 @@ function loadDefaultSamples() {
         }
     });
     console.log("Loaded samples: ", samples);
+}
+
+// Main instrument loop
+function runLoop(){
+    let frequency = 60000 / currentTempo / 16;
+    totalSteps = (60000 / currentTempo / 16) * numMeasures;
+    let currentTimestamp = Date.now();
+    if(currentTimestamp - lastTimestamp > frequency){
+        // Only run the "play things" loop if we're playing.
+        if (currentStep % 8 === 0 && is_metronome) {
+                playMetronome();
+                fillCircle(currentStep / totalSteps);
+            }
+            internalTimer();
+        currentStep += 1;
+        if (currentStep >= totalSteps) currentStep = 0;
+        lastTimestamp = currentTimestamp;
+    }
+    requestAnimationFrame(runLoop);
 }
 
 function internalTimer() {
@@ -158,12 +177,12 @@ function internalTimer() {
     stopNotes = {};
 }
 
+// # region Playback and recording functions
 function triggerNote(noteIdx) {
     let e_id = `note${noteIdx}`;
     let noteDiv = document.getElementById(e_id);
     if (noteDiv !== null && noteDiv !== undefined) {
         playNote(noteDiv);
-
     }
 }
 
@@ -171,303 +190,6 @@ function endNote(noteIdx) {
     let noteDiv = document.getElementById(`note${noteIdx}`);
     if (noteDiv !== null && noteDiv !== undefined) clearNote(noteDiv);
 }
-
-
-// Make our grid of buttons
-function makeGrid() {
-    let screenWidth = window.innerWidth;
-    let screenHeight = window.innerHeight;
-    // Create the container element
-    let container;
-    container = document.getElementById("noteContainer");
-    if (container) {
-        container.innerHTML = "";
-    } else {
-        container = document.createElement("div");
-        container.classList.add("text-center", "note-container");
-        container.id = "noteContainer";
-    }
-
-
-    // Determine the number of rows and columns based on the screen resolution
-    let rows, columns;
-    if (screenWidth > screenHeight) {
-        rows = num_inst;
-        columns = num_notes;
-    } else {
-        rows = num_notes;
-        columns = num_inst;
-    }
-    num_rows = rows;
-    num_cols = columns;
-    // Set the size of the rows and columns based on the screen size
-    let vSize = ((screenWidth - 2) / columns);
-    let hSize = ((screenHeight - 2) / rows);
-    let size = Math.min(vSize, hSize) + "px";
-
-// Create the rows
-    for (let i = 0; i < rows; i++) {
-        let row = document.createElement("div");
-        row.classList.add("noteRow");
-        row.id = `row${i}`;
-        row.style.height = size;
-        row.style.width = "100%";
-        // Create the columns
-        for (let j = 0; j < columns; j++) {
-            let col = document.createElement("div");
-            col.classList.add("noteCol", `note${j}`, `row${i}`);
-            col.id = `note${i}-${j}`;
-            // Append the container to the body
-            col.style.height = size;
-            col.style.width = size;
-            row.appendChild(col);
-        }
-        container.appendChild(row);
-    }
-
-    document.body.prepend(container);
-    let noteCols = document.getElementsByClassName("noteCol");
-    for (let i = 0; i < noteCols.length; i++) {
-        noteCols[i].addEventListener("mousedown", function(event) { playNote(event.target, true); });
-        noteCols[i].addEventListener("mouseup", function(event) { clearNote(event.target, true); });
-        noteCols[i].addEventListener("touchstart", function(event) { playNote(event.target, true); });
-        noteCols[i].addEventListener("touchend", function(event) { clearNote(event.target, true); });
-    }
-}
-
-// Bind keyboard keys to notes
-function createKeyboardControls() {
-    // Create a dictionary of keycode-index pairs
-    let keyCodeIndex = {
-        "KeyW": 0, // w
-        "Digit3": 1, // 3
-        "KeyE": 2, // e
-        "Digit4": 3, // 4
-        "KeyR": 4, // r
-        "KeyT": 5, // t
-        "Digit6": 6, // 6
-        "KeyY": 7, // y
-        "Digit7": 8, // 7
-        "KeyU": 9, // u
-        "Digit8": 10, // 8
-        "KeyI": 11, // i
-        "KeyO": 12 // o
-    };
-    console.log("Created controls.")
-    // Get the resolution of the screen
-    let resolution = window.innerWidth > window.innerHeight ? "landscape" : "portrait";
-
-    // Add keydown event listener
-    keyDownListener = document.addEventListener("keydown", function(event) {
-        let keyCode = event.code;
-        if (keyCode in keyCodeIndex) {
-            let col = resolution === "landscape" ? keyCodeIndex[keyCode] : currentInstrument;
-            let row = resolution === "landscape" ? currentInstrument : keyCodeIndex[keyCode];
-            // Find the corresponding element in the grid using the index
-            let element = document.getElementById(`note${row}-${col}`);
-            if (element && ! element.classList.contains("heldNote")) {
-                console.log("Playing: ", element);
-                playNote(element, true);
-            }
-            // Add code here to perform actions on the element
-        }
-    });
-
-    keyUpListener = document.addEventListener("keyup", function(event) {
-        let keyCode = event.code;
-        if (keyCode in keyCodeIndex) {
-            let col = resolution === "landscape" ? keyCodeIndex[keyCode] : currentInstrument;
-            let row = resolution === "landscape" ? currentInstrument : keyCodeIndex[keyCode];
-            // Find the corresponding element in the grid using the index
-            let element = document.getElementById(`note${row}-${col}`)
-            if (element && element.classList.contains("heldNote")) {
-                console.log("Clearing: ", element);
-                clearNote(element, true);
-            }
-            // Add code here to perform actions on the element
-        }
-    });
-}
-
-// Create UI controls to do the things
-function createControls() {
-
-    let controls = document.getElementById("controls");
-    let controlsSet = false;
-    if (controls === null || controls === undefined) {
-        controls = document.createElement("div");
-        controls.id = "controls";
-    } else {
-        controlsSet = true;
-    }
-    // Check screen orientation and add appropriate class
-    if(window.innerHeight > window.innerWidth) {
-        controls.classList.remove("topbar");
-        controls.classList.add("sidebar");
-    } else {
-        controls.classList.remove("sidebar");
-        controls.classList.add("topbar");
-    }
-    // Create the main div container
-    if (controlsSet) return;
-
-    // Create the buttons
-    let buttonNames = ["metronome", "play", "back", "forward", "copy", "paste", "clear", "record"];
-    let buttonIcons = ["metronome", "play", "rewind", "fast-forward", "content-copy", "content-paste", "delete", "record"];
-    for(let i = 0; i < buttonNames.length; i++) {
-        let button = document.createElement("div");
-        button.id = buttonNames[i];
-        if (button.id === "play") {
-            button.classList.add("active");
-        }
-        button.classList.add("ctrlBtn", "mdi", "mdi-" + buttonIcons[i]);
-        button.addEventListener("click", function() {
-            window[this.id]();
-        });
-        controls.appendChild(button);
-    }
-
-    // Append the main div container to the body
-    document.body.appendChild(controls);
-}
-
-// Set listeners to make up/down keys adjust the selected instrument
-function setInstrumentSwitcher() {
-    document.addEventListener("keydown", function(event) {
-  if (event.code === "ArrowUp") {
-    currentInstrument = currentInstrument - 1;
-  } else if (event.code === "ArrowDown") {
-    currentInstrument = currentInstrument + 1;
-  } else if (event.code === "ArrowRight") {
-      currentTempo = Math.min(currentTempo + 1, maxTempo);
-  } else if (event.code === "ArrowLeft") {
-      currentTempo = Math.max(currentTempo - 1, minTempo);
-  }
-  currentInstrument = currentInstrument < 0 ? num_inst - 1 : currentInstrument >= num_inst ? 0 : currentInstrument;
-});
-}
-
-// Create empty functions for each button
-function metronome() {
-    let self = document.getElementById("metronome");
-    if (is_metronome) {
-        self.classList.remove("active");
-        is_metronome = false;
-        if (tickSound) {
-            tickSound.stop();
-        }
-    } else {
-        self.classList.add("active");
-        is_metronome = true;
-    }
-}
-function play() {
-    let self = document.getElementById("play");
-    if (is_playing) {
-        self.classList.remove("active");
-        is_playing = false;
-    } else {
-        self.classList.add("active");
-        is_playing = true;
-    }
-}
-function back() {}
-function forward() {}
-function copy() {}
-function paste() {}
-function clear() {
-    if (confirm("This will reset everything. Continue?")) {
-        playNotes = {};
-        recNotes = {};
-        held_notes = [];
-        activeNotes = [];
-        // All notes to start will a howl created and put here.
-        startNotes = {};
-        // Each loop we take everything in startNotes, start it, and move it here.
-        startedNotes = {};
-        // If a note stop is triggered, we add it to this array, call stop, and then clear stopNotes.
-        stopNotes = {};
-    }
-}
-function record() {
-    let self = document.getElementById("record");
-    if (is_recording) {
-        self.classList.remove("active");
-        is_recording = false;
-    } else {
-        self.classList.add("active");
-        is_recording = true;
-    }
-}
-
-
-document.addEventListener("DOMContentLoaded", function () {
-    makeGrid();
-    createControls();
-    createKeyboardControls(0);
-    setInstrumentSwitcher();
-    requestAnimationFrame(runLoop);
-    loadDefaultSamples();
-});
-
-window.addEventListener("resize", function () {
-    makeGrid();
-    createControls();
-
-});
-
-
-
-
-
-//Function to find adjacent elements
-function findAdjacentElements(clickedElement, existingElements) {
-    if (clickedElement === null || clickedElement === undefined) return [];
-    let elementRow = parseInt(clickedElement.className.match(/row(\d+)/)[1]);
-    let noteIndex = parseInt(clickedElement.className.match(/note(\d+)/)[1]);
-    let nextElements = [];
-
-    // Check top row
-    if (elementRow > 0) {
-        for (let i = noteIndex - 1; i <= noteIndex + 1; i++) {
-            if (i >= 0 && i < 12) {
-                let topElement = document.querySelector(`.note${i}.row${elementRow - 1}`);
-                if (!existingElements.includes(topElement) && !nextElements.includes(topElement)) {
-                    nextElements.push(topElement);
-                }
-            }
-        }
-    }
-    // Check left and right
-    if (noteIndex > 0) {
-        let leftElement = document.querySelector(`.note${noteIndex - 1}.row${elementRow}`);
-        if (!existingElements.includes(leftElement) && !nextElements.includes(leftElement)) {
-            nextElements.push(leftElement);
-        }
-    }
-    if (noteIndex < 12) {
-        let rightElement = document.querySelector(`.note${noteIndex + 1}.row${elementRow}`);
-        if (!existingElements.includes(rightElement) && !nextElements.includes(rightElement)) {
-            nextElements.push(rightElement);
-        }
-    }
-    // Check bottom row
-    if (elementRow < 8) {
-        for (let i = noteIndex - 1; i <= noteIndex + 1; i++) {
-            if (i >= 0 && i < 12) {
-                let bottomElement = document.querySelector(`.note${i}.row${elementRow + 1}`);
-                if (!existingElements.includes(bottomElement) && !nextElements.includes(bottomElement)) {
-                    nextElements.push(bottomElement);
-                }
-            }
-        }
-    }
-    return nextElements.filter(function(element) {
-        return element !== null && element !== undefined;
-    });
-}
-
-let noteColors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff"];
 
 function recordNote(noteIdx) {
     if (!(currentStep in recNotes)) {
@@ -554,7 +276,6 @@ function playNote(clickedElement, is_event=false) {
     }
 }
 
-
 function clearNote(clickedElement, is_event = false) {
     if (!clickedElement.classList) {
         return;
@@ -608,6 +329,326 @@ function clearNote(clickedElement, is_event = false) {
     }
 }
 
+// #endregion Playback and recording functions
+
+// #region UI Setup
+// Make our grid of buttons
+function createInstrumentControls() {
+    let screenWidth = window.innerWidth;
+    let screenHeight = window.innerHeight;
+    // Create the container element
+    let container;
+    container = document.getElementById("noteContainer");
+    if (container) {
+        container.innerHTML = "";
+    } else {
+        container = document.createElement("div");
+        container.classList.add("text-center", "note-container");
+        container.id = "noteContainer";
+    }
+
+
+    // Determine the number of rows and columns based on the screen resolution
+    let rows, columns, orientation;
+    if (screenWidth > screenHeight) {
+        orientation = "portrait";
+        rows = num_inst;
+        columns = num_notes;
+    } else {
+        orientation = "landscape";
+        rows = num_notes;
+        columns = num_inst;
+    }
+    num_rows = rows;
+    num_cols = columns;
+    // Set the size of the rows and columns based on the screen size
+    let vSize = ((screenWidth - 2) / (columns + 2));
+    let hSize = ((screenHeight - 2) / (rows + 2));
+    let size = Math.min(vSize, hSize) + "px";
+
+// Create the rows
+    for (let i = 0; i < rows; i++) {
+        let row = document.createElement("div");
+        row.classList.add("noteRow");
+        row.id = `row${i}`;
+        row.style.height = size;
+        row.style.width = "100%";
+        // Create the columns
+        for (let j = 0; j < columns; j++) {
+            let col = document.createElement("div");
+            col.classList.add("noteCol", `note${j}`, `row${i}`);
+            if (orientation === "portrait") {
+            col.id = `note${i}-${j}`;
+            } else {
+                col.id = `note${j}-${i}`;
+            }
+
+
+            // Append the container to the body
+            col.style.height = size;
+            col.style.width = size;
+            row.appendChild(col);
+        }
+        container.appendChild(row);
+    }
+
+    document.body.prepend(container);
+    let noteCols = document.getElementsByClassName("noteCol");
+    for (let i = 0; i < noteCols.length; i++) {
+        noteCols[i].addEventListener("mousedown", function(event) { playNote(event.target, true); });
+        noteCols[i].addEventListener("mouseup", function(event) { clearNote(event.target, true); });
+        noteCols[i].addEventListener("touchstart", function(event) { playNote(event.target, true); });
+        noteCols[i].addEventListener("touchend", function(event) { clearNote(event.target, true); });
+    }
+}
+
+// Bind keyboard keys to notes
+function createKeyboardControls() {
+    // Create a dictionary of keycode-index pairs
+    let keyCodeIndex = {
+        "KeyW": 0, // w
+        "Digit3": 1, // 3
+        "KeyE": 2, // e
+        "Digit4": 3, // 4
+        "KeyR": 4, // r
+        "KeyT": 5, // t
+        "Digit6": 6, // 6
+        "KeyY": 7, // y
+        "Digit7": 8, // 7
+        "KeyU": 9, // u
+        "Digit8": 10, // 8
+        "KeyI": 11, // i
+        "KeyO": 12 // o
+    };
+    console.log("Created controls.")
+
+    // Add keydown event listener
+    keyDownListener = document.addEventListener("keydown", function(event) {
+        let keyCode = event.code;
+        if (keyCode in keyCodeIndex) {
+            let col = keyCodeIndex[keyCode];
+            // Find the corresponding element in the grid using the index
+            let element = document.getElementById(`note${currentInstrument}-${col}`);
+            if (element && ! element.classList.contains("heldNote")) {
+                playNote(element, true);
+            }
+            // Add code here to perform actions on the element
+        }
+    });
+
+    keyUpListener = document.addEventListener("keyup", function(event) {
+        let keyCode = event.code;
+        if (keyCode in keyCodeIndex) {
+            let col = keyCodeIndex[keyCode];
+            // Find the corresponding element in the grid using the index
+            let element = document.getElementById(`note${currentInstrument}-${col}`)
+            if (element && element.classList.contains("heldNote")) {
+                clearNote(element, true);
+            }
+            // Add code here to perform actions on the element
+        }
+    });
+}
+
+// Create UI controls to do the things
+function createRecordingControls() {
+    let controls = document.getElementById("controls");
+    let controlsSet = false;
+    if (controls === null || controls === undefined) {
+        controls = document.createElement("div");
+        controls.id = "controls";
+    } else {
+        controlsSet = true;
+    }
+    // Check screen orientation and add appropriate class
+    if(window.innerHeight > window.innerWidth) {
+        controls.classList.remove("topbar");
+        controls.classList.add("sidebar");
+    } else {
+        controls.classList.remove("sidebar");
+        controls.classList.add("topbar");
+    }
+    // Create the main div container
+    if (controlsSet) return;
+
+    // Create the buttons
+    let buttonNames = ["metronome", "play", "back", "forward", "copy", "paste", "clear", "undo", "record"];
+    let buttonIcons = ["metronome", "play", "rewind", "fast-forward", "content-copy", "content-paste", "delete", "undo", "record"];
+    for(let i = 0; i < buttonNames.length; i++) {
+        let button = document.createElement("div");
+        button.id = buttonNames[i];
+        if (button.id === "play") {
+            button.classList.add("active");
+        }
+        if (button.id === "metronome") {
+            let circleFill = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            let fill = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            circleFill.classList.add("circle-fill");
+            fill.classList.add("fill");
+            svg.classList.add("circle-base");
+            fill.setAttribute("cx", "25");
+            fill.setAttribute("cy", "25");
+            fill.setAttribute("r", "20");
+            circleFill.setAttribute("cx", "25");
+            circleFill.setAttribute("cy", "25");
+            circleFill.setAttribute("r", "20");
+            svg.appendChild(circleFill);
+            svg.appendChild(fill);
+            button.appendChild(svg);
+        }
+        button.classList.add("ctrlBtn", "mdi", "mdi-" + buttonIcons[i]);
+        button.addEventListener("click", function() {
+            window[this.id]();
+        });
+        controls.appendChild(button);
+    }
+
+    // Append the main div container to the body
+    document.body.appendChild(controls);
+}
+
+// Set listeners to make up/down keys adjust the selected instrument
+function setKeyListeners() {
+    document.addEventListener("keydown", function(event) {
+  if (event.code === "ArrowUp") {
+    currentInstrument = currentInstrument - 1;
+  } else if (event.code === "ArrowDown") {
+    currentInstrument = currentInstrument + 1;
+  } else if (event.code === "ArrowRight") {
+      currentTempo = Math.min(currentTempo + 1, maxTempo);
+  } else if (event.code === "ArrowLeft") {
+      currentTempo = Math.max(currentTempo - 1, minTempo);
+  }
+  let last_instrument = currentInstrument;
+  currentInstrument = currentInstrument < 0 ? num_inst - 1 : currentInstrument >= num_inst ? 0 : currentInstrument;
+  selectRow();
+});
+}
+// endregion UI Setup
+
+
+// region Instrument Controls
+
+function metronome() {
+    let self = document.getElementById("metronome");
+    if (is_metronome) {
+        self.classList.remove("active");
+        is_metronome = false;
+        if (tickSound) {
+            tickSound.stop();
+            fillCircle(0);
+        }
+    } else {
+        self.classList.add("active");
+        is_metronome = true;
+    }
+}
+function play() {
+    let self = document.getElementById("play");
+    if (is_playing) {
+        self.classList.remove("active");
+        is_playing = false;
+    } else {
+        self.classList.add("active");
+        is_playing = true;
+    }
+}
+function back() {}
+function forward() {}
+function copy() {}
+function paste() {}
+function undo() {
+    if (confirm("This will undo the current inputs. Continue?")) {
+        recNotes = {};
+    }
+}
+function clear() {
+    if (confirm("This will reset everything. Continue?")) {
+        playNotes = {};
+        recNotes = {};
+        held_notes = [];
+        activeNotes = [];
+        startNotes = {};
+        startedNotes = {};
+        stopNotes = {};
+    }
+}
+function record() {
+    let self = document.getElementById("record");
+    if (is_recording) {
+        self.classList.remove("active");
+        // Merge current rec buffer
+        playNotes = [playNotes, recNotes].reduce(function (r, o) {
+            Object.keys(o).forEach(function (k) { r[k] = o[k]; });
+            return r;
+        }, {});
+        is_recording = false;
+    } else {
+        self.classList.add("active");
+        is_recording = true;
+    }
+}
+
+// endregion Instrument Controls
+
+
+//Function to find adjacent elements
+function findAdjacentElements(clickedElement, existingElements) {
+    if (clickedElement === null || clickedElement === undefined) return [];
+    let elementRow = parseInt(clickedElement.className.match(/row(\d+)/)[1]);
+    let noteIndex = parseInt(clickedElement.className.match(/note(\d+)/)[1]);
+    let nextElements = [];
+
+    // Check top row
+    if (elementRow > 0) {
+        for (let i = noteIndex - 1; i <= noteIndex + 1; i++) {
+            if (i >= 0 && i < 12) {
+                let topElement = document.querySelector(`.note${i}.row${elementRow - 1}`);
+                if (!existingElements.includes(topElement) && !nextElements.includes(topElement)) {
+                    nextElements.push(topElement);
+                }
+            }
+        }
+    }
+    // Check left and right
+    if (noteIndex > 0) {
+        let leftElement = document.querySelector(`.note${noteIndex - 1}.row${elementRow}`);
+        if (!existingElements.includes(leftElement) && !nextElements.includes(leftElement)) {
+            nextElements.push(leftElement);
+        }
+    }
+    if (noteIndex < 12) {
+        let rightElement = document.querySelector(`.note${noteIndex + 1}.row${elementRow}`);
+        if (!existingElements.includes(rightElement) && !nextElements.includes(rightElement)) {
+            nextElements.push(rightElement);
+        }
+    }
+    // Check bottom row
+    if (elementRow < 8) {
+        for (let i = noteIndex - 1; i <= noteIndex + 1; i++) {
+            if (i >= 0 && i < 12) {
+                let bottomElement = document.querySelector(`.note${i}.row${elementRow + 1}`);
+                if (!existingElements.includes(bottomElement) && !nextElements.includes(bottomElement)) {
+                    nextElements.push(bottomElement);
+                }
+            }
+        }
+    }
+    return nextElements.filter(function(element) {
+        return element !== null && element !== undefined;
+    });
+}
+
+function selectRow() {
+    document.querySelectorAll('.noteRow.active').forEach(function(element) {
+        element.classList.remove('active');
+    });
+    document.getElementById("row" + currentInstrument).classList.add("active");
+}
+
+let noteColors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff"];
+
 function darkenColor(color, percent) {
     let R = parseInt(color.substring(1, 3), 16);
     let G = parseInt(color.substring(3, 5), 16);
@@ -622,5 +663,14 @@ function darkenColor(color, percent) {
     B = B.length === 1 ? "0" + B : B;
 
     return "#" + R + G + B;
+}
+
+function fillCircle(percentage) {
+    let div = document.getElementById("metronome");
+    let circle = div.querySelector(".circle-fill");
+    let fill = div.querySelector(".fill");
+    let circumference = 2 * Math.PI * circle.r.baseVal.value;
+    console.log("Fillin: ", circumference * percentage, percentage);
+    fill.setAttribute("stroke-dasharray", `${circumference * percentage} ${circumference}`);
 }
 

@@ -26,10 +26,24 @@ body {
     border-radius: 50%;
 }
 
+#metronome {
+    position: relative;
+}
+
 .ctrlBtn:hover {
     background-color: #222222;
 }
 
+.noteRow {
+    background: black;
+    flex-wrap: nowrap;
+    display: flex;
+}
+
+.noteRow.active {
+    border: 4px solid white;
+    animation: fadeInOut 2s ease-in-out infinite;
+}
 
 #record.active {
     color: red;
@@ -38,6 +52,32 @@ body {
 #metronome.active, #play.active {
     color: green;
 }
+
+#progress-circle {
+    position: relative;
+    width: 50px;
+    height: 50px;
+}
+
+.circle-base {
+    position: fixed;
+    left: 10px;
+}
+
+.circle-fill {
+    stroke: #cccccc;
+    fill: none;
+    cx: 25px;
+    cy: 25px;
+}
+
+.fill {
+    stroke: #ff0000;
+    fill: none;
+    cx: 25px;
+    cy: 25px;
+}
+
 
 .ctrlBtn::before {
     margin-top: 32%;
@@ -48,12 +88,6 @@ body {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-}
-
-.noteRow {
-    background: black;
-    flex-wrap: nowrap;
-    display: flex;
 }
 
 .noteCol {
@@ -72,4 +106,16 @@ body {
 
 .note_6 {
     height: calc(100% / 6);
+}
+
+@keyframes fadeInOut {
+    0% {
+        border-color: #ffffff;
+    }
+    50% {
+        border-color: transparent;
+    }
+    100% {
+        border-color: #ffffff;
+    }
 }
